@@ -1,23 +1,24 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useState } from "react";
 import {
-    Modal,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Modal,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import GestureRecognizer from "react-native-swipe-gestures";
 
 const TaskManager = () => {
-  const [currentDate, setCurrentDate] = useState(new Date(2024, 9, 5));
-  const [selectedDate, setSelectedDate] = useState(new Date(2024, 9, 5));
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [tasks, setTasks] = useState({
-    "2024-10-5": [
+    "2025-10-5": [
       {
         id: 1,
         title: "Meeting with Alex",
@@ -40,7 +41,7 @@ const TaskManager = () => {
         description: "Review code and documentation for Q4 project",
       },
     ],
-    "2024-10-8": [
+    "2025-9-27": [
       {
         id: 4,
         title: "Team standup",
@@ -65,6 +66,7 @@ const TaskManager = () => {
     title: "",
     time: new Date(),
     description: "",
+    notes: "",
   });
   const [newTask, setNewTask] = useState({
     title: "",
@@ -73,6 +75,7 @@ const TaskManager = () => {
   });
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showEditTimePicker, setShowEditTimePicker] = useState(false);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   const monthNames = [
     "January",
@@ -191,6 +194,7 @@ const TaskManager = () => {
       title: task.title,
       time: taskDate,
       description: task.description || "",
+      notes: task.notes || "",
     });
     setIsEditMode(false);
     setShowTaskDetail(true);
@@ -204,6 +208,7 @@ const TaskManager = () => {
         title: editTask.title,
         time: formatTime(editTask.time),
         description: editTask.description,
+        notes: editTask.notes,
       };
 
       setTasks((prev) => ({
@@ -314,9 +319,11 @@ const TaskManager = () => {
             >
               <Text style={styles.navIcon}>‹</Text>
             </TouchableOpacity>
-            <Text style={styles.monthTitle}>
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </Text>
+            <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
+              <Text style={styles.monthTitle}>
+                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={() => navigateMonth(1)}
               style={styles.navButton}
@@ -326,19 +333,21 @@ const TaskManager = () => {
           </View>
 
           {/* Calendar Grid */}
-          <View style={styles.calendar}>
-            {/* Day headers */}
-            <View style={styles.dayHeaders}>
-              {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
-                <Text key={`${day}-${index}`} style={styles.dayHeader}>
-                  {day}
-                </Text>
-              ))}
+          <GestureRecognizer
+            onSwipeLeft={() => navigateMonth(1)}
+            onSwipeRight={() => navigateMonth(-1)}
+          >
+            <View style={styles.calendar}>
+              <View style={styles.dayHeaders}>
+                {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+                  <Text key={`${day}-${index}`} style={styles.dayHeader}>
+                    {day}
+                  </Text>
+                ))}
+              </View>
+              <View style={styles.calendarGrid}>{renderCalendar()}</View>
             </View>
-
-            {/* Calendar days */}
-            <View style={styles.calendarGrid}>{renderCalendar()}</View>
-          </View>
+          </GestureRecognizer>
 
           {/* Selected Date Tasks */}
           <View style={styles.tasksHeader}>
@@ -521,7 +530,7 @@ const TaskManager = () => {
 
                       <TextInput
                         style={[styles.input, styles.textArea]}
-                        placeholder="Task Description (optional)"
+                        placeholder="Task Description"
                         placeholderTextColor="#999"
                         value={editTask.description}
                         onChangeText={(text) =>
@@ -533,7 +542,26 @@ const TaskManager = () => {
                         multiline={true}
                         numberOfLines={3}
                         textAlignVertical="top"
+                        maxLength={200}
                       />
+
+                      {/* ✅ Notes (only in edit mode) */}
+                      {isEditMode && (
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Add notes..."
+                          placeholderTextColor="#999"
+                          multiline
+                          value={editTask.notes}
+                          onChangeText={(text) => {
+                            setEditTask((prev) => ({
+                              ...prev,
+                              notes: text,
+                            }));
+                          }}
+                          maxLength={200}
+                        />
+                      )}
 
                       <TouchableOpacity
                         style={styles.timePickerButton}
@@ -577,20 +605,37 @@ const TaskManager = () => {
                         {selectedTask.time}
                       </Text>
 
-                      {selectedTask.description ? (
-                        <View style={styles.descriptionContainer}>
-                          <Text style={styles.descriptionLabel}>
-                            Description:
-                          </Text>
+                      <View style={styles.descriptionContainer}>
+                        <Text style={styles.descriptionLabel}>
+                          Description:
+                        </Text>
+
+                        {selectedTask.description ? (
                           <Text style={styles.taskDetailDescription}>
                             {selectedTask.description}
                           </Text>
-                        </View>
-                      ) : (
-                        <Text style={styles.noDescription}>
-                          No description provided
+                        ) : (
+                          <Text style={styles.noDescription}>
+                            No description provided
+                          </Text>
+                        )}
+                      </View>
+
+                      <View style={styles.descriptionContainer}>
+                        <Text style={styles.descriptionLabel}>
+                          Notes:
                         </Text>
-                      )}
+
+                        {selectedTask.notes ? (
+                          <Text style={styles.taskDetailDescription}>
+                            {selectedTask.notes}
+                          </Text>
+                        ) : (
+                          <Text style={styles.noDescription}>
+                            No notes here...
+                          </Text>
+                        )}
+                      </View>
 
                       <View style={styles.taskStatusContainer}>
                         <Text style={styles.statusLabel}>Status: </Text>
@@ -661,6 +706,20 @@ const TaskManager = () => {
       <TouchableOpacity onPress={() => setShowAddTask(true)} style={styles.fab}>
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
+      {showMonthPicker && (
+      <DateTimePicker
+        value={currentDate}
+        mode="date" // full date picker
+        display="spinner"
+        onChange={(event, date) => {
+          setShowMonthPicker(false);
+          if (date) {
+            setCurrentDate(date);
+            setSelectedDate(date);
+          }
+        }}
+      />
+    )}
     </SafeAreaView>
   );
 };
@@ -1045,7 +1104,7 @@ export const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    bottom: 120,
+    bottom: 25,
     right: 16,
     width: 56,
     height: 56,
