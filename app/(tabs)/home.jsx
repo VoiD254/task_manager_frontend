@@ -17,47 +17,7 @@ import GestureRecognizer from "react-native-swipe-gestures";
 const TaskManager = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [tasks, setTasks] = useState({
-    "2025-10-5": [
-      {
-        id: 1,
-        title: "Meeting with Alex",
-        time: "10:00 AM",
-        completed: false,
-        description: "Discuss project timeline and deliverables",
-      },
-      {
-        id: 2,
-        title: "Lunch with Sarah",
-        time: "1:00 PM",
-        completed: false,
-        description: "Catch up and discuss new opportunities",
-      },
-      {
-        id: 3,
-        title: "Project review",
-        time: "3:00 PM",
-        completed: false,
-        description: "Review code and documentation for Q4 project",
-      },
-    ],
-    "2025-9-27": [
-      {
-        id: 4,
-        title: "Team standup",
-        time: "9:00 AM",
-        completed: false,
-        description: "Daily sync with development team",
-      },
-      {
-        id: 5,
-        title: "Client presentation",
-        time: "2:00 PM",
-        completed: false,
-        description: "Present final designs and get client feedback",
-      },
-    ],
-  });
+  const [tasks, setTasks] = useState();
   const [showAddTask, setShowAddTask] = useState(false);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -76,6 +36,7 @@ const TaskManager = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showEditTimePicker, setShowEditTimePicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
 
   const monthNames = [
     "January",
@@ -132,6 +93,11 @@ const TaskManager = () => {
     });
   };
 
+  const formatDateFull = (date) => {
+    const options = { weekday: "short", month: "short", day: "numeric", year: "numeric" };
+    return date.toLocaleDateString("en-US", options);
+  };
+
   const toggleTaskComplete = (taskId) => {
     const dateKey = formatDateKey(selectedDate);
     setTasks((prev) => ({
@@ -178,6 +144,13 @@ const TaskManager = () => {
     }
   };
 
+  const onEditDateChange = (event, selectedDate) => {
+    setShowEditDatePicker(false);
+    if (selectedDate) {
+      setEditTask((prev) => ({ ...prev, date: selectedDate }));
+    }
+  };
+
   const openTaskDetail = (task) => {
     setSelectedTask(task);
     // Convert time string back to Date object for editing
@@ -193,6 +166,7 @@ const TaskManager = () => {
     setEditTask({
       title: task.title,
       time: taskDate,
+      date: new Date(selectedDate),
       description: task.description || "",
       notes: task.notes || "",
     });
@@ -202,7 +176,9 @@ const TaskManager = () => {
 
   const updateTask = () => {
     if (editTask.title.trim() && selectedTask) {
-      const dateKey = formatDateKey(selectedDate);
+      const oldDateKey = formatDateKey(selectedDate);
+      const newDateKey = formatDateKey(editTask.date);
+      
       const updatedTask = {
         ...selectedTask,
         title: editTask.title,
@@ -211,13 +187,32 @@ const TaskManager = () => {
         notes: editTask.notes,
       };
 
-      setTasks((prev) => ({
-        ...prev,
-        [dateKey]:
-          prev[dateKey]?.map((task) =>
+      setTasks((prev) => {
+        const newTasks = { ...prev };
+        
+        // if date changed, move task to new date
+        if (oldDateKey !== newDateKey) {
+          // Remove from old date
+          newTasks[oldDateKey] = (prev[oldDateKey] || []).filter(
+            (task) => task.id !== selectedTask.id
+          );
+          
+          // Add to new date
+          newTasks[newDateKey] = [...(prev[newDateKey] || []), updatedTask];
+        } else {
+          // Same date, just update the task
+          newTasks[oldDateKey] = (prev[oldDateKey] || []).map((task) =>
             task.id === selectedTask.id ? updatedTask : task
-          ) || [],
-      }));
+          );
+        }
+        
+        return newTasks;
+      });
+
+      // ✅ FIXED: Update selected date if task was moved
+      if (oldDateKey !== newDateKey) {
+        setSelectedDate(editTask.date);
+      }
 
       setSelectedTask(updatedTask);
       setIsEditMode(false);
@@ -526,6 +521,7 @@ const TaskManager = () => {
                         onChangeText={(text) =>
                           setEditTask((prev) => ({ ...prev, title: text }))
                         }
+                        maxLength={60}
                       />
 
                       <TextInput
@@ -581,6 +577,24 @@ const TaskManager = () => {
                         />
                       )}
 
+                      <TouchableOpacity
+                        style={styles.timePickerButton}
+                        onPress={() => setShowEditDatePicker(true)}
+                      >
+                        <Text style={styles.timePickerText}>
+                          {formatDateFull(editTask.date)}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {showEditDatePicker && (
+                        <DateTimePicker
+                          value={editTask.date}
+                          mode="date"
+                          display="default"
+                          onChange={onEditDateChange}
+                        />
+                      )}
+
                       <View style={styles.taskStatusContainer}>
                         <Text style={styles.statusLabel}>Status: </Text>
                         <Text
@@ -622,9 +636,7 @@ const TaskManager = () => {
                       </View>
 
                       <View style={styles.descriptionContainer}>
-                        <Text style={styles.descriptionLabel}>
-                          Notes:
-                        </Text>
+                        <Text style={styles.descriptionLabel}>Notes:</Text>
 
                         {selectedTask.notes ? (
                           <Text style={styles.taskDetailDescription}>
@@ -707,19 +719,19 @@ const TaskManager = () => {
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
       {showMonthPicker && (
-      <DateTimePicker
-        value={currentDate}
-        mode="date" // full date picker
-        display="spinner"
-        onChange={(event, date) => {
-          setShowMonthPicker(false);
-          if (date) {
-            setCurrentDate(date);
-            setSelectedDate(date);
-          }
-        }}
-      />
-    )}
+        <DateTimePicker
+          value={currentDate}
+          mode="date" // full date picker
+          display="spinner"
+          onChange={(event, date) => {
+            setShowMonthPicker(false);
+            if (date) {
+              setCurrentDate(date);
+              setSelectedDate(date);
+            }
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };

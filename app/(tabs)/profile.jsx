@@ -1,11 +1,15 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  Modal,
   StatusBar,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +23,9 @@ export default function Profile() {
     email: "john@gmail.com",
   });
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
 
   // Fetch user profile from your backend API
@@ -27,12 +34,16 @@ export default function Profile() {
       try {
         setLoading(true);
         // Replace with your actual API endpoint
-        // const response = await fetch('your-api-endpoint/user/profile');
+        // const token = await AsyncStorage.getItem("jwtToken");
+        // const response = await fetch('your-api-endpoint/user/profile', {
+        //   headers: {
+        //     'Authorization': `Bearer ${token}`
+        //   }
+        // });
         // const userData = await response.json();
         // setUserProfile({
-        //   name: userData.name,
-        //   email: userData.email,
-        //   avatar: userData.avatar,
+        //   name: userData.profile.name,
+        //   email: userData.profile.email,
         // });
 
         // Temporary placeholder - remove when connecting to API
@@ -52,6 +63,63 @@ export default function Profile() {
     fetchUserProfile();
   }, []);
 
+  const handleEditName = () => {
+    setEditName(userProfile.name);
+    setShowEditModal(true);
+  };
+
+  const handleSaveName = async () => {
+    if (!editName.trim()) {
+      Alert.alert("Error", "Name cannot be empty");
+      return;
+    }
+
+    if (editName.length > 50) {
+      Alert.alert("Error", "Name cannot be longer than 50 characters");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      // Replace with your actual API endpoint
+      // const token = await AsyncStorage.getItem("jwtToken");
+      // const response = await fetch('your-api-endpoint/user/profile', {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Authorization': `Bearer ${token}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({ name: editName }),
+      // });
+      
+      // if (!response.ok) {
+      //   throw new Error('Failed to update profile');
+      // }
+      
+      // const data = await response.json();
+      // setUserProfile({
+      //   ...userProfile,
+      //   name: data.profile.name,
+      // });
+
+      // Temporary - remove when connecting to API
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setUserProfile({
+        ...userProfile,
+        name: editName,
+      });
+
+      setShowEditModal(false);
+      Alert.alert("Success", "Name updated successfully");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      Alert.alert("Error", "Failed to update name. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
       {
@@ -64,6 +132,13 @@ export default function Profile() {
         onPress: async () => {
           try {
             // Remove JWT from storage
+            // const token = await AsyncStorage.getItem("jwtToken");
+            // await fetch('your-api-endpoint/auth/logout', {
+            //   method: 'POST',
+            //   headers: {
+            //     'Authorization': `Bearer ${token}`
+            //   }
+            // });
             // await AsyncStorage.removeItem("jwtToken");
 
             // Redirect to login
@@ -95,9 +170,19 @@ export default function Profile() {
             </Text>
           </View>
           <View style={profileStyles.userInfo}>
-            <Text style={profileStyles.userName}>
-              {loading ? "Loading..." : userProfile.name}
-            </Text>
+            <View style={profileStyles.nameRow}>
+              <Text style={profileStyles.userName}>
+                {loading ? "Loading..." : userProfile.name}
+              </Text>
+              {!loading && (
+                <TouchableOpacity
+                  onPress={handleEditName}
+                  style={profileStyles.editButton}
+                >
+                  <Text style={profileStyles.editIcon}>✎</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <Text style={profileStyles.userEmail}>
               {loading ? "Loading..." : userProfile.email}
             </Text>
@@ -153,6 +238,56 @@ export default function Profile() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Edit Name Modal */}
+      <Modal visible={showEditModal} transparent={true} animationType="fade">
+        <TouchableWithoutFeedback
+          onPress={() => {
+            if (!saving) {
+              setShowEditModal(false);
+            }
+          }}
+        >
+          <View style={profileStyles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={profileStyles.modal}>
+                <Text style={profileStyles.modalTitle}>Edit Name</Text>
+
+                <TextInput
+                  style={profileStyles.input}
+                  placeholder="Enter your name"
+                  placeholderTextColor="#999"
+                  value={editName}
+                  onChangeText={setEditName}
+                  maxLength={50}
+                  editable={!saving}
+                />
+
+                <View style={profileStyles.modalButtons}>
+                  <TouchableOpacity
+                    onPress={() => setShowEditModal(false)}
+                    style={[profileStyles.button, profileStyles.cancelButton]}
+                    disabled={saving}
+                  >
+                    <Text style={profileStyles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSaveName}
+                    style={[profileStyles.button, profileStyles.saveButton]}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <ActivityIndicator color="white" />
+                    ) : (
+                      <Text style={profileStyles.saveButtonText}>Save</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -187,11 +322,30 @@ const profileStyles = {
   userInfo: {
     alignItems: "center",
   },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
   userName: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#eeecec",
-    marginBottom: 4,
+  },
+  editButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#3a3a3a",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#666",
+  },
+  editIcon: {
+    fontSize: 16,
+    color: "#3B82F6",
   },
   userEmail: {
     fontSize: 16,
@@ -239,5 +393,62 @@ const profileStyles = {
     color: "#3B82F6",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+  },
+  modal: {
+    backgroundColor: "#323232",
+    borderRadius: 8,
+    padding: 24,
+    width: "100%",
+    maxWidth: 320,
+    borderWidth: 1,
+    borderColor: "#666",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#eeecec",
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: "#3a3a3a",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#666",
+    color: "#eeecec",
+    fontSize: 16,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  cancelButton: {
+    borderWidth: 1,
+    borderColor: "#666",
+  },
+  cancelButtonText: {
+    color: "#eeecec",
+  },
+  saveButton: {
+    backgroundColor: "#3B82F6",
+  },
+  saveButtonText: {
+    color: "white",
+    fontWeight: "500",
   },
 };

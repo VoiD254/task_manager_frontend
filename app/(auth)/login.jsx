@@ -14,8 +14,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useAuth } from '../hooks/AuthProvider';
 
 function LoginScreen() {
+  const { signin } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -87,40 +89,13 @@ function LoginScreen() {
     setIsLoading(true);
     
     try {
-      // Replace with your actual API endpoint
-      const response = await fetch('YOUR_API_ENDPOINT/auth/signin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email.toLowerCase().trim(),
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Handle successful login
-        // Store token and user data
-        // await AsyncStorage.setItem('authToken', data.token);
-        // await AsyncStorage.setItem('user', JSON.stringify(data.user));
-        
-        Alert.alert('Success', 'Login successful!', [
-          { text: 'OK', onPress: () => router.replace('/(tabs)/home') }
-        ]);
-      } else {
-        // Handle validation errors from backend
-        if (data.errors) {
-          setErrors(data.errors);
-        } else {
-          Alert.alert('Login Failed', data.message || 'Invalid credentials');
-        }
-      }
+      await signin({
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+      })
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Error', 'Network error. Please try again.');
+      Alert.alert("Login Failed", error.response?.data?.message || "Invalid credentials");
     } finally {
       setIsLoading(false);
     }
@@ -128,6 +103,10 @@ function LoginScreen() {
 
   const navigateToSignup = () => {
     router.push('/(auth)/signup');
+  };
+
+  const navigateToOtpPage = () => {
+    router.push('/(auth)/otp');
   };
 
   return (
@@ -168,6 +147,7 @@ function LoginScreen() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
+                    maxLength={100}
                   />
                 </View>
                 {errors.email && (
@@ -190,6 +170,7 @@ function LoginScreen() {
                     onChangeText={(text) => handleInputChange('password', text)}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
+                    maxLength={50}
                   />
                   <TouchableOpacity
                     style={styles.eyeIcon}
@@ -208,7 +189,7 @@ function LoginScreen() {
               </View>
 
               {/* Forgot Password */}
-              <TouchableOpacity style={styles.forgotPasswordContainer}>
+              <TouchableOpacity style={styles.forgotPasswordContainer} onPress={navigateToOtpPage}>
                 <Text style={styles.forgotPasswordText}>
                   Forgot Password?
                 </Text>
@@ -233,7 +214,7 @@ function LoginScreen() {
               {/* Sign Up Link */}
               <View style={styles.signupContainer}>
                 <Text style={styles.signupText}>
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <TouchableOpacity onPress={navigateToSignup}>
                     <Text style={styles.signupLink}>Sign Up</Text>
                   </TouchableOpacity>

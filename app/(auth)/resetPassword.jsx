@@ -14,25 +14,23 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useAuth } from "../hooks/AuthProvider";
+import { useResetToken } from '../hooks/ResetTokenContext';
+import { resetPassword as resetPasswordApi } from "../services/authApi";
 
-function SignupScreen() {
-  const { signup } = useAuth();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+function ResetPasswordScreen() {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  
+  const {resetToken} = useResetToken();
+  if (!resetToken) {
+    Alert.alert("Error", "Reset token missing. Restart OTP flow.");
+    router.replace("/(auth)/forgotPassword");
+    return null;
+  }
 
   const validatePassword = (password) => {
     const errors = [];
@@ -56,32 +54,18 @@ function SignupScreen() {
   const validateForm = () => {
     const newErrors = {};
     
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-    
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Invalid email';
-    }
-    
-    // Password validation
-    if (!formData.password.trim()) {
+    if (!newPassword.trim()) {
       newErrors.password = 'Password is required';
     } else {
-      const passwordErrors = validatePassword(formData.password);
+      const passwordErrors = validatePassword(newPassword);
       if (passwordErrors.length > 0) {
-        newErrors.password = passwordErrors[0]; // Show first error
+        newErrors.password = passwordErrors[0];
       }
     }
     
-    // Confirm password validation
-    if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Confirm password is required';
-    } else if (formData.password !== formData.confirmPassword) {
+    if (!confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (newPassword !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
     
@@ -90,50 +74,42 @@ function SignupScreen() {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'password') {
+      setNewPassword(value);
+    } else if (field === 'confirmPassword') {
+      setConfirmPassword(value);
+    }
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
-    
-    // Clear confirm password error if passwords now match
-    if (field === 'password' && errors.confirmPassword && value === formData.confirmPassword) {
-      setErrors(prev => ({ ...prev, confirmPassword: null }));
-    }
-    if (field === 'confirmPassword' && errors.confirmPassword && value === formData.password) {
-      setErrors(prev => ({ ...prev, confirmPassword: null }));
-    }
   };
 
-  const handleSignup = async () => {
+  const handleResetPassword = async () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
     
     try {
-      await signup({
-        name: formData.name,
-        email: formData.email.toLowerCase().trim(),
-        password: formData.password,
+      await resetPasswordApi({
+        resetToken,
+        newPassword,
+        confirmPassword
       });
 
-      Alert.alert("Success", "Account created successfully!", [
-        { text: "OK", onPress: () => router.replace("/(tabs)/home") },
+      Alert.alert("Success", "Password reset successfully!", [
+        { text: "OK", onPress: () => router.replace("/(auth)/login") }
       ]);
     } catch (error) {
-      console.error('Signup error:', error);
-      Alert.alert(
-        "Signup Failed",
-        error.response?.data?.message || "Unable to create account. Please try again."
-      );
+      console.error('Password reset error:', error);
+      Alert.alert("Error", error.response?.data?.message || "Failed to reset password");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const navigateToLogin = () => {
-    router.push('/(auth)/login');
+  const handleBack = () => {
+    router.back();
   };
 
   return (
@@ -146,9 +122,14 @@ function SignupScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            Sign Up
-          </Text>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={handleBack}
+          >
+            <Ionicons name="chevron-back" size={28} color="#eeececff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>New Password</Text>
+          <View style={{ width: 40 }} />
         </View>
 
         <ScrollView 
@@ -159,52 +140,11 @@ function SignupScreen() {
           {/* Main Content */}
           <View style={styles.mainContent}>
             <View style={styles.formContainer}>
-              {/* Name Input */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      errors.name ? styles.inputError : styles.inputNormal
-                    ]}
-                    placeholder="Full Name"
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.name}
-                    onChangeText={(text) => handleInputChange('name', text)}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                    maxLength={50}
-                  />
-                </View>
-                {errors.name && (
-                  <Text style={styles.errorText}>{errors.name}</Text>
-                )}
-              </View>
+              <Text style={styles.stepDescription}>
+                Create a new password for your account.
+              </Text>
 
-              {/* Email Input */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      errors.email ? styles.inputError : styles.inputNormal
-                    ]}
-                    placeholder="Email"
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.email}
-                    onChangeText={(text) => handleInputChange('email', text)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    maxLength={100}
-                  />
-                </View>
-                {errors.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                )}
-              </View>
-
-              {/* Password Input */}
+              {/* New Password */}
               <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <TextInput
@@ -213,9 +153,9 @@ function SignupScreen() {
                       styles.passwordInput,
                       errors.password ? styles.inputError : styles.inputNormal
                     ]}
-                    placeholder="Password"
+                    placeholder="New Password"
                     placeholderTextColor="#9CA3AF"
-                    value={formData.password}
+                    value={newPassword}
                     onChangeText={(text) => handleInputChange('password', text)}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -237,7 +177,7 @@ function SignupScreen() {
                 )}
               </View>
 
-              {/* Confirm Password Input */}
+              {/* Confirm Password */}
               <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <TextInput
@@ -248,7 +188,7 @@ function SignupScreen() {
                     ]}
                     placeholder="Confirm Password"
                     placeholderTextColor="#9CA3AF"
-                    value={formData.confirmPassword}
+                    value={confirmPassword}
                     onChangeText={(text) => handleInputChange('confirmPassword', text)}
                     secureTextEntry={!showConfirmPassword}
                     autoCapitalize="none"
@@ -270,30 +210,29 @@ function SignupScreen() {
                 )}
               </View>
 
-              {/* Sign Up Button */}
+              {/* Reset Password Button */}
               <TouchableOpacity
                 style={[
-                  styles.signupButton,
-                  isLoading ? styles.signupButtonDisabled : styles.signupButtonEnabled
+                  styles.button,
+                  isLoading ? styles.buttonDisabled : styles.buttonEnabled
                 ]}
-                onPress={handleSignup}
+                onPress={handleResetPassword}
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.signupButtonText}>Create Account</Text>
+                  <Text style={styles.buttonText}>Reset Password</Text>
                 )}
               </TouchableOpacity>
 
-              {/* Login Link */}
-              <View style={styles.loginContainer}>
-                <Text style={styles.loginText}>
-                  Already have an account?{' '}
-                  <TouchableOpacity onPress={navigateToLogin}>
-                    <Text style={styles.loginLink}>Login</Text>
-                  </TouchableOpacity>
-                </Text>
+              {/* Password Requirements Info */}
+              <View style={styles.requirementsContainer}>
+                <Text style={styles.requirementsTitle}>Password must contain:</Text>
+                <Text style={styles.requirementText}>• At least 6 characters</Text>
+                <Text style={styles.requirementText}>• One uppercase letter (A-Z)</Text>
+                <Text style={styles.requirementText}>• One number (0-9)</Text>
+                <Text style={styles.requirementText}>• One special character (!@#$%^&*)</Text>
               </View>
             </View>
           </View>
@@ -306,7 +245,7 @@ function SignupScreen() {
   );
 }
 
-export default SignupScreen;
+export default ResetPasswordScreen;
 
 const styles = StyleSheet.create({
   safeContainer: {
@@ -319,20 +258,23 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
     paddingTop: 48,
   },
   backButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    flex: 1,
-    paddingRight: 32,
     color: '#eeececff',
+    flex: 1,
   },
   scrollView: {
     flex: 1,
@@ -347,6 +289,12 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     gap: 20,
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginBottom: 8,
   },
   inputContainer: {
     marginBottom: 4,
@@ -384,7 +332,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginLeft: 4,
   },
-  signupButton: {
+  button: {
     width: '100%',
     height: 56,
     borderRadius: 8,
@@ -392,29 +340,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  signupButtonEnabled: {
+  buttonEnabled: {
     backgroundColor: '#1173d4',
   },
-  signupButtonDisabled: {
+  buttonDisabled: {
     backgroundColor: '#9CA3AF',
   },
-  signupButtonText: {
+  buttonText: {
     color: '#eeececff',
     fontWeight: 'bold',
     fontSize: 16,
   },
-  loginContainer: {
-    alignItems: 'center',
+  requirementsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    padding: 12,
     marginTop: 8,
   },
-  loginText: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  loginLink: {
+  requirementsTitle: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#1173d4',
-    top: 6,
+    color: '#eeececff',
+    marginBottom: 8,
+  },
+  requirementText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginBottom: 4,
   },
   footerSpacer: {
     padding: 24,
