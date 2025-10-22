@@ -4,8 +4,6 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -113,146 +111,131 @@ function ResetPasswordScreen() {
   };
 
   return (
-    <View style={styles.safeContainer}>
+    <View style={resetStyles.safeContainer}>
       <StatusBar barStyle="light-content" backgroundColor="#323232ff" />
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={handleBack}
-          >
-            <Ionicons name="chevron-back" size={28} color="#eeececff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Password</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
+      
+      <View style={resetStyles.header}>
+        <TouchableOpacity 
+          style={resetStyles.backButton}
+          onPress={handleBack}
         >
-          {/* Main Content */}
-          <View style={styles.mainContent}>
-            <View style={styles.formContainer}>
-              <Text style={styles.stepDescription}>
-                Create a new password for your account.
-              </Text>
+          <Ionicons name="chevron-back" size={28} color="#eeececff" />
+        </TouchableOpacity>
+        <Text style={resetStyles.headerTitle}>New Password</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-              {/* New Password */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      styles.passwordInput,
-                      errors.password ? styles.inputError : styles.inputNormal
-                    ]}
-                    placeholder="New Password"
-                    placeholderTextColor="#9CA3AF"
-                    value={newPassword}
-                    onChangeText={(text) => handleInputChange('password', text)}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    maxLength={50}
+      <ScrollView 
+        style={resetStyles.scrollView}
+        contentContainerStyle={resetStyles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={resetStyles.mainContent}>
+          <View style={resetStyles.formContainer}>
+            <Text style={resetStyles.stepDescription}>
+              Create a new password for your account.
+            </Text>
+
+            <View style={resetStyles.inputContainer}>
+              <View style={resetStyles.inputWrapper}>
+                <TextInput
+                  style={[
+                    resetStyles.input,
+                    resetStyles.passwordInput,
+                    errors.password ? resetStyles.inputError : resetStyles.inputNormal
+                  ]}
+                  placeholder="New Password"
+                  placeholderTextColor="#9CA3AF"
+                  value={newPassword}
+                  onChangeText={(text) => handleInputChange('password', text)}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  maxLength={50}
+                />
+                <TouchableOpacity
+                  style={resetStyles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                    size={25} 
+                    color="#9CA3AF" 
                   />
-                  <TouchableOpacity
-                    style={styles.eyeIcon}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Ionicons 
-                      name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                      size={25} 
-                      color="#9CA3AF" 
-                    />
-                  </TouchableOpacity>
-                </View>
-                {errors.password && (
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                )}
+                </TouchableOpacity>
               </View>
+              {errors.password && (
+                <Text style={resetStyles.errorText}>{errors.password}</Text>
+              )}
+            </View>
 
-              {/* Confirm Password */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      styles.passwordInput,
-                      errors.confirmPassword ? styles.inputError : styles.inputNormal
-                    ]}
-                    placeholder="Confirm Password"
-                    placeholderTextColor="#9CA3AF"
-                    value={confirmPassword}
-                    onChangeText={(text) => handleInputChange('confirmPassword', text)}
-                    secureTextEntry={!showConfirmPassword}
-                    autoCapitalize="none"
-                    maxLength={50}
+            <View style={resetStyles.inputContainer}>
+              <View style={resetStyles.inputWrapper}>
+                <TextInput
+                  style={[
+                    resetStyles.input,
+                    resetStyles.passwordInput,
+                    errors.confirmPassword ? resetStyles.inputError : resetStyles.inputNormal
+                  ]}
+                  placeholder="Confirm Password"
+                  placeholderTextColor="#9CA3AF"
+                  value={confirmPassword}
+                  onChangeText={(text) => handleInputChange('confirmPassword', text)}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  maxLength={50}
+                />
+                <TouchableOpacity
+                  style={resetStyles.eyeIcon}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <Ionicons 
+                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
+                    size={25} 
+                    color="#9CA3AF" 
                   />
-                  <TouchableOpacity
-                    style={styles.eyeIcon}
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    <Ionicons 
-                      name={showConfirmPassword ? "eye-outline" : "eye-off-outline"} 
-                      size={25} 
-                      color="#9CA3AF" 
-                    />
-                  </TouchableOpacity>
-                </View>
-                {errors.confirmPassword && (
-                  <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-                )}
+                </TouchableOpacity>
               </View>
+              {errors.confirmPassword && (
+                <Text style={resetStyles.errorText}>{errors.confirmPassword}</Text>
+              )}
+            </View>
 
-              {/* Reset Password Button */}
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  isLoading ? styles.buttonDisabled : styles.buttonEnabled
-                ]}
-                onPress={handleResetPassword}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.buttonText}>Reset Password</Text>
-                )}
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                resetStyles.button,
+                isLoading ? resetStyles.buttonDisabled : resetStyles.buttonEnabled
+              ]}
+              onPress={handleResetPassword}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={resetStyles.buttonText}>Reset Password</Text>
+              )}
+            </TouchableOpacity>
 
-              {/* Password Requirements Info */}
-              <View style={styles.requirementsContainer}>
-                <Text style={styles.requirementsTitle}>Password must contain:</Text>
-                <Text style={styles.requirementText}>• At least 6 characters</Text>
-                <Text style={styles.requirementText}>• One uppercase letter (A-Z)</Text>
-                <Text style={styles.requirementText}>• One number (0-9)</Text>
-                <Text style={styles.requirementText}>• One special character (!@#$%^&*)</Text>
-              </View>
+            <View style={resetStyles.requirementsContainer}>
+              <Text style={resetStyles.requirementsTitle}>Password must contain:</Text>
+              <Text style={resetStyles.requirementText}>• At least 6 characters</Text>
+              <Text style={resetStyles.requirementText}>• One uppercase letter (A-Z)</Text>
+              <Text style={resetStyles.requirementText}>• One number (0-9)</Text>
+              <Text style={resetStyles.requirementText}>• One special character (!@#$%^&*)</Text>
             </View>
           </View>
+        </View>
 
-          {/* Footer Spacer */}
-          <View style={styles.footerSpacer} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <View style={resetStyles.footerSpacer} />
+      </ScrollView>
     </View>
   );
 }
 
 export default ResetPasswordScreen;
 
-const styles = StyleSheet.create({
+const resetStyles = StyleSheet.create({
   safeContainer: {
-    flex: 1,
-    backgroundColor: '#323232ff',
-  },
-  container: {
     flex: 1,
     backgroundColor: '#323232ff',
   },
@@ -281,11 +264,11 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   mainContent: {
-    flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   formContainer: {
     gap: 20,

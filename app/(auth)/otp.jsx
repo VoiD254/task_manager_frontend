@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,7 +16,7 @@ import { useResetToken } from "../hooks/ResetTokenContext";
 import { forgotPassword, resendOtp, verifyOtp } from "../services/authApi";
 
 function ForgotPasswordScreen() {
-  const [step, setStep] = useState('email'); // 'email' or 'otp'
+  const [step, setStep] = useState('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [errors, setErrors] = useState({});
@@ -144,172 +142,154 @@ function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.safeContainer}>
+    <View style={otpStyles.safeContainer}>
       <StatusBar barStyle="light-content" backgroundColor="#323232ff" />
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      
+      <View style={otpStyles.header}>
+        <TouchableOpacity 
+          style={otpStyles.backButton}
+          onPress={handleBack}
+        >
+          <Ionicons name="chevron-back" size={28} color="#eeececff" />
+        </TouchableOpacity>
+        <Text style={otpStyles.headerTitle}>
+          {step === 'email' ? 'Reset Password' : 'Verify OTP'}
+        </Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView 
+        style={otpStyles.scrollView}
+        contentContainerStyle={otpStyles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={handleBack}
-          >
-            <Ionicons name="chevron-back" size={28} color="#eeececff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {step === 'email' ? 'Reset Password' : 'Verify OTP'}
-          </Text>
-          <View style={{ width: 40 }} />
+        <View style={otpStyles.mainContent}>
+          <View style={otpStyles.formContainer}>
+            {step === 'email' && (
+              <>
+                <Text style={otpStyles.stepDescription}>
+                  Enter your email address and we&apos;ll send you an OTP to reset your password.
+                </Text>
+                
+                <View style={otpStyles.inputContainer}>
+                  <View style={otpStyles.inputWrapper}>
+                    <TextInput
+                      style={[
+                        otpStyles.input,
+                        errors.email ? otpStyles.inputError : otpStyles.inputNormal
+                      ]}
+                      placeholder="Email"
+                      placeholderTextColor="#9CA3AF"
+                      value={email}
+                      onChangeText={(text) => handleInputChange('email', text)}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      maxLength={100}
+                    />
+                  </View>
+                  {errors.email && (
+                    <Text style={otpStyles.errorText}>{errors.email}</Text>
+                  )}
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    otpStyles.button,
+                    isLoading ? otpStyles.buttonDisabled : otpStyles.buttonEnabled
+                  ]}
+                  onPress={handleRequestOtp}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={otpStyles.buttonText}>Send OTP</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+
+            {step === 'otp' && (
+              <>
+                <Text style={otpStyles.stepDescription}>
+                  Enter the 6-digit OTP sent to {'\n'}
+                  <Text style={otpStyles.emailHighlight}>{email}</Text>
+                </Text>
+                
+                <View style={otpStyles.inputContainer}>
+                  <View style={otpStyles.inputWrapper}>
+                    <TextInput
+                      style={[
+                        otpStyles.input,
+                        otpStyles.otpInput,
+                        errors.otp ? otpStyles.inputError : otpStyles.inputNormal
+                      ]}
+                      placeholder="XXXXXX"
+                      placeholderTextColor="#9CA3AF"
+                      value={otp}
+                      onChangeText={(text) => handleInputChange('otp', text)}
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      textAlign="center"
+                    />
+                  </View>
+                  {errors.otp && (
+                    <Text style={otpStyles.errorText}>{errors.otp}</Text>
+                  )}
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    otpStyles.button,
+                    isLoading ? otpStyles.buttonDisabled : otpStyles.buttonEnabled
+                  ]}
+                  onPress={handleVerifyOtp}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={otpStyles.buttonText}>Verify OTP</Text>
+                  )}
+                </TouchableOpacity>
+
+                {timer > 0 ? (
+                  <Text style={otpStyles.timerText}>
+                    Resend OTP in {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
+                  </Text>
+                ) : (
+                  <TouchableOpacity 
+                    onPress={handleResendOtp}
+                    disabled={isLoading}
+                  >
+                    <Text style={[
+                      otpStyles.resendText,
+                      isLoading && otpStyles.resendTextDisabled
+                    ]}>
+                      Resend OTP
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <Text style={otpStyles.noteText}>
+                  Note: OTP expires in 5 minutes
+                </Text>
+              </>
+            )}
+          </View>
         </View>
 
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Main Content */}
-          <View style={styles.mainContent}>
-            <View style={styles.formContainer}>
-              {/* Step 1: Email */}
-              {step === 'email' && (
-                <>
-                  <Text style={styles.stepDescription}>
-                    Enter your email address and we&apos;ll send you an OTP to reset your password.
-                  </Text>
-                  
-                  <View style={styles.inputContainer}>
-                    <View style={styles.inputWrapper}>
-                      <TextInput
-                        style={[
-                          styles.input,
-                          errors.email ? styles.inputError : styles.inputNormal
-                        ]}
-                        placeholder="Email"
-                        placeholderTextColor="#9CA3AF"
-                        value={email}
-                        onChangeText={(text) => handleInputChange('email', text)}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        maxLength={100}
-                      />
-                    </View>
-                    {errors.email && (
-                      <Text style={styles.errorText}>{errors.email}</Text>
-                    )}
-                  </View>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.button,
-                      isLoading ? styles.buttonDisabled : styles.buttonEnabled
-                    ]}
-                    onPress={handleRequestOtp}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.buttonText}>Send OTP</Text>
-                    )}
-                  </TouchableOpacity>
-                </>
-              )}
-
-              {/* Step 2: OTP */}
-              {step === 'otp' && (
-                <>
-                  <Text style={styles.stepDescription}>
-                    Enter the 6-digit OTP sent to {'\n'}
-                    <Text style={styles.emailHighlight}>{email}</Text>
-                  </Text>
-                  
-                  <View style={styles.inputContainer}>
-                    <View style={styles.inputWrapper}>
-                      <TextInput
-                        style={[
-                          styles.input,
-                          styles.otpInput,
-                          errors.otp ? styles.inputError : styles.inputNormal
-                        ]}
-                        placeholder="XXXXXX"
-                        placeholderTextColor="#9CA3AF"
-                        value={otp}
-                        onChangeText={(text) => handleInputChange('otp', text)}
-                        keyboardType="number-pad"
-                        maxLength={6}
-                        textAlign="center"
-                      />
-                    </View>
-                    {errors.otp && (
-                      <Text style={styles.errorText}>{errors.otp}</Text>
-                    )}
-                  </View>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.button,
-                      isLoading ? styles.buttonDisabled : styles.buttonEnabled
-                    ]}
-                    onPress={handleVerifyOtp}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.buttonText}>Verify OTP</Text>
-                    )}
-                  </TouchableOpacity>
-
-                  {timer > 0 ? (
-                    <Text style={styles.timerText}>
-                      Resend OTP in {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
-                    </Text>
-                  ) : (
-                    <TouchableOpacity 
-                      onPress={handleResendOtp}
-                      disabled={isLoading}
-                    >
-                      <Text style={[
-                        styles.resendText,
-                        isLoading && styles.resendTextDisabled
-                      ]}>
-                        Resend OTP
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                  <Text style={{fontSize: 13,
-                        color: '#9CA3AF',
-                        textAlign: 'center',
-                        marginVertical: 6,}
-                    }
-                    >
-                    Note: OTP expires in 5 minutes
-                  </Text>
-                </>
-              )}
-            </View>
-          </View>
-
-          {/* Footer Spacer */}
-          <View style={styles.footerSpacer} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <View style={otpStyles.footerSpacer} />
+      </ScrollView>
     </View>
   );
 }
 
 export default ForgotPasswordScreen;
 
-const styles = StyleSheet.create({
+const otpStyles = StyleSheet.create({
   safeContainer: {
-    flex: 1,
-    backgroundColor: '#323232ff',
-  },
-  container: {
     flex: 1,
     backgroundColor: '#323232ff',
   },
@@ -338,11 +318,11 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   mainContent: {
-    flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   formContainer: {
     gap: 20,
@@ -423,6 +403,12 @@ const styles = StyleSheet.create({
   },
   resendTextDisabled: {
     color: '#9CA3AF',
+  },
+  noteText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginVertical: 6,
   },
   footerSpacer: {
     padding: 24,

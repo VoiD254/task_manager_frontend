@@ -4,8 +4,6 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -53,20 +51,18 @@ function LoginScreen() {
   const validateForm = () => {
     const newErrors = {};
     
-    // Email validation
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Invalid email';
     }
     
-    // Password validation
     if (!formData.password.trim()) {
       newErrors.password = 'Password is required';
     } else {
       const passwordErrors = validatePassword(formData.password);
       if (passwordErrors.length > 0) {
-        newErrors.password = passwordErrors[0]; // Show first error
+        newErrors.password = passwordErrors[0];
       }
     }
     
@@ -77,7 +73,6 @@ function LoginScreen() {
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
@@ -93,6 +88,7 @@ function LoginScreen() {
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
       })
+      router.replace("/(tabs)/home")
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert("Login Failed", error.response?.data?.message || "Invalid credentials");
@@ -110,142 +106,123 @@ function LoginScreen() {
   };
 
   return (
-    <View style={styles.safeContainer}>
+    <View style={loginStyles.safeContainer}>
       <StatusBar barStyle="light-content" backgroundColor="#323232ff" />
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      
+      <View style={loginStyles.header}>
+        <Text style={loginStyles.headerTitle}>Login</Text>
+      </View>
+
+      <ScrollView 
+        style={loginStyles.scrollView}
+        contentContainerStyle={loginStyles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            Login
-          </Text>
-        </View>
+        <View style={loginStyles.mainContent}>
+          <View style={loginStyles.formContainer}>
+            <View style={loginStyles.inputContainer}>
+              <View style={loginStyles.inputWrapper}>
+                <TextInput
+                  style={[
+                    loginStyles.input,
+                    errors.email ? loginStyles.inputError : loginStyles.inputNormal
+                  ]}
+                  placeholder="Email"
+                  placeholderTextColor="#9CA3AF"
+                  value={formData.email}
+                  onChangeText={(text) => handleInputChange('email', text)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={100}
+                />
+              </View>
+              {errors.email && (
+                <Text style={loginStyles.errorText}>{errors.email}</Text>
+              )}
+            </View>
 
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Main Content */}
-          <View style={styles.mainContent}>
-            <View style={styles.formContainer}>
-              {/* Email Input */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      errors.email ? styles.inputError : styles.inputNormal
-                    ]}
-                    placeholder="Email"
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.email}
-                    onChangeText={(text) => handleInputChange('email', text)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    maxLength={100}
+            <View style={loginStyles.inputContainer}>
+              <View style={loginStyles.inputWrapper}>
+                <TextInput
+                  style={[
+                    loginStyles.input,
+                    loginStyles.passwordInput,
+                    errors.password ? loginStyles.inputError : loginStyles.inputNormal
+                  ]}
+                  placeholder="Password"
+                  placeholderTextColor="#9CA3AF"
+                  value={formData.password}
+                  onChangeText={(text) => handleInputChange('password', text)}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  maxLength={50}
+                />
+                <TouchableOpacity
+                  style={loginStyles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons 
+                    name={showPassword ? "eye-outline" : "eye-off-outline"} 
+                    size={25} 
+                    color="#9CA3AF" 
                   />
-                </View>
-                {errors.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                )}
+                </TouchableOpacity>
               </View>
+              {errors.password && (
+                <Text style={loginStyles.errorText}>{errors.password}</Text>
+              )}
+            </View>
 
-              {/* Password Input */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      styles.passwordInput,
-                      errors.password ? styles.inputError : styles.inputNormal
-                    ]}
-                    placeholder="Password"
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.password}
-                    onChangeText={(text) => handleInputChange('password', text)}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    maxLength={50}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeIcon}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Ionicons 
-                      name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                      size={25} 
-                      color="#9CA3AF" 
-                    />
-                  </TouchableOpacity>
-                </View>
-                {errors.password && (
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                )}
-              </View>
+            <TouchableOpacity style={loginStyles.forgotPasswordContainer} onPress={navigateToOtpPage}>
+              <Text style={loginStyles.forgotPasswordText}>
+                Forgot Password?
+              </Text>
+            </TouchableOpacity>
 
-              {/* Forgot Password */}
-              <TouchableOpacity style={styles.forgotPasswordContainer} onPress={navigateToOtpPage}>
-                <Text style={styles.forgotPasswordText}>
-                  Forgot Password?
-                </Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                loginStyles.loginButton,
+                isLoading ? loginStyles.loginButtonDisabled : loginStyles.loginButtonEnabled
+              ]}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={loginStyles.loginButtonText}>Login</Text>
+              )}
+            </TouchableOpacity>
 
-              {/* Login Button */}
-              <TouchableOpacity
-                style={[
-                  styles.loginButton,
-                  isLoading ? styles.loginButtonDisabled : styles.loginButtonEnabled
-                ]}
-                onPress={handleLogin}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Login</Text>
-                )}
-              </TouchableOpacity>
-
-              {/* Sign Up Link */}
-              <View style={styles.signupContainer}>
-                <Text style={styles.signupText}>
-                  Don&apos;t have an account?{' '}
-                  <TouchableOpacity onPress={navigateToSignup}>
-                    <Text style={styles.signupLink}>Sign Up</Text>
-                  </TouchableOpacity>
-                </Text>
-              </View>
+            <View style={loginStyles.signupContainer}>
+              <Text style={loginStyles.signupText}>
+                Don&apos;t have an account?{' '}
+                <TouchableOpacity onPress={navigateToSignup}>
+                  <Text style={loginStyles.signupLink}>Sign Up</Text>
+                </TouchableOpacity>
+              </Text>
             </View>
           </View>
+        </View>
 
-          {/* Footer Spacer */}
-          <View style={styles.footerSpacer} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <View style={loginStyles.footerSpacer} />
+      </ScrollView>
     </View>
   );
 }
 
 export default LoginScreen;
 
-const styles = StyleSheet.create({
+const loginStyles = StyleSheet.create({
   safeContainer: {
     flex: 1,
     backgroundColor: '#323232ff',
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#323232ff',
-  },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 16,
     paddingTop: 48,
   },
@@ -260,11 +237,11 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
+    justifyContent: 'center',
   },
   mainContent: {
-    flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   formContainer: {
     gap: 20,

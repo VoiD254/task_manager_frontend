@@ -9,7 +9,7 @@ const refreshToken = (payload) => api.post("/user/refreshToken", payload);
 const forgotPassword = (payload) => api.post("/user/forgotPassword", payload);
 const resendOtp = (payload) => api.post("/user/resendOtp", payload);
 const verifyOtp = (payload) => api.post("/user/verifyOtp", payload);
-const resetPassword = (payload) => api.post("/user/resetPassword", payload);
+const resetPassword = (payload) => api.patch("/user/resetPassword", payload);
 
 export {
     forgotPassword, getProfile, logout, refreshToken, resendOtp, resetPassword, signin, signup, updateProfile, verifyOtp

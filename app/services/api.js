@@ -1,7 +1,7 @@
 import axios from "axios";
 import { clearAll, getItem, storeItem } from "../utils/storage";
 
-const BASE_URL = 'http://10.17.108.148:3000/api/v1';
+const BASE_URL = 'http://192.168.68.109:3000/api/v1';
 
 const api = axios.create({
     baseURL: BASE_URL,

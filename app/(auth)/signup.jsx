@@ -116,6 +116,7 @@ function SignupScreen() {
         name: formData.name,
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
+        confirmPassword: formData.confirmPassword
       });
 
       Alert.alert("Success", "Account created successfully!", [
@@ -139,22 +140,22 @@ function SignupScreen() {
   return (
     <View style={styles.safeContainer}>
       <StatusBar barStyle="light-content" backgroundColor="#323232ff" />
+      
+      {/* Header - Fixed at top */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Sign Up</Text>
+      </View>
+
       <KeyboardAvoidingView 
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            Sign Up
-          </Text>
-        </View>
-
         <ScrollView 
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Main Content */}
           <View style={styles.mainContent}>
@@ -318,20 +319,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#323232ff',
   },
   header: {
-    flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 16,
     paddingTop: 48,
-  },
-  backButton: {
-    padding: 8,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    flex: 1,
-    paddingRight: 32,
     color: '#eeececff',
   },
   scrollView: {
@@ -339,11 +335,12 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
+    minHeight: '100%',
+    justifyContent: 'center',
   },
   mainContent: {
-    flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   formContainer: {
     gap: 20,

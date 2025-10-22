@@ -1,43 +1,47 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const storeItem = async (key, value) =>{
-    try{
-        await AsyncStorage.setItem(key, JSON.stringify(value));
-    } catch(err){
-        console.error("storeItem error", key, err);
-    }
-}
+const storeItem = async (key, value) => {
+  try {
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.error("storeItem error", key, err);
+  }
+};
 
-const getItem = async (key) =>{
-    try{
-        const raw = await AsyncStorage.getItem(key);
-        return raw ? JSON.parse(raw) : null;
-    }catch(err) {
-        console.error("getItem error", key, err);
-        return null;
-    }
-}
+const getItem = async (key) => {
+  try {
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) return null;
 
-const removeItem = async (key) =>{
-    try{
-        await AsyncStorage.removeItem(key);
-    } catch(err){
-        console.error("removeItem error", key, err);
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return raw;
     }
-}
+  } catch (err) {
+    console.error("getItem error", key, err);
+    return null;
+  }
+};
 
-const clearAll = async () =>{
-    try{
-        await AsyncStorage.clear();
-    } catch(err){
-        console.error("clearAll error", err);
-    }
-}
+const removeItem = async (key) => {
+  try {
+    await AsyncStorage.removeItem(key);
+  } catch (err) {
+    console.error("removeItem error", key, err);
+  }
+};
+
+const clearAll = async () => {
+  try {
+    await AsyncStorage.clear();
+  } catch (err) {
+    console.error("clearAll error", err);
+  }
+};
 
 export {
-    clearAll,
-    getItem,
-    removeItem,
-    storeItem
+    clearAll, getItem,
+    removeItem, storeItem
 };
 
